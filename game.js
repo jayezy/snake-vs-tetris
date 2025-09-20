@@ -9,9 +9,11 @@ const CANVAS_HEIGHT = GRID_HEIGHT * GRID_SIZE; // 750px (25 * 30)
 let gameRunning = true;
 let canvas, ctx;
 
-// Audio context for sound effects
+// Audio context for sound effects and music
 let audioContext;
 let audioInitialized = false;
+let technoMusic = null;
+let musicGainNode = null;
 
 // Snake
 let snake = [];
@@ -304,6 +306,9 @@ function update() {
         // Activate destruction mode
         destructionMode = true;
         destructionModeTime = Date.now();
+
+        // Start techno music
+        playTechnoMusic();
     }
 
     // Update falling Tetris piece
@@ -351,8 +356,15 @@ function updateTetrisPiece() {
                 pieceSuspended = false;
                 pieceDropTime = currentTime;
             } else {
-                // If blocked by snake, suspend the piece
-                pieceSuspended = true;
+                // Check if piece should be suspended (only when bottom touches snake)
+                if (shouldPieceSuspend(fallingPiece.x, gridY, fallingPiece.pieceType, fallingPiece.rotationIndex)) {
+                    pieceSuspended = true;
+                } else {
+                    // Piece cannot move and cannot suspend - it should settle or stop
+                    fallingPiece = null;
+                    pieceSuspended = false;
+                    pieceDropTime = currentTime;
+                }
             }
         }
     }
@@ -376,6 +388,30 @@ function shouldPieceSettle(x, y, pieceType, rotationIndex) {
     return false;
 }
 
+// Check if piece should be suspended (only when piece bottom touches snake top)
+function shouldPieceSuspend(x, y, pieceType, rotationIndex) {
+    const blocks = pieceType.rotations[rotationIndex];
+    for (let block of blocks) {
+        const blockX = x + block[0];
+        const blockY = y + block[1];
+
+        // Check if this block position would be occupied by snake
+        const snakeAtPosition = snake.find(segment => segment.x === blockX && segment.y === blockY);
+        if (snakeAtPosition) {
+            // Check if there's a piece block directly below this position
+            const blockBelow = blocks.some(b =>
+                x + b[0] === blockX && y + b[1] === blockY + 1
+            );
+
+            // If there's no block below, this piece can suspend on the snake
+            if (!blockBelow) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // Check if Tetris piece can move to new position (blocked by snake, settled pieces, or boundaries)
 function canPieceFall(x, y, pieceType, rotationIndex) {
     const blocks = pieceType.rotations[rotationIndex];
@@ -391,9 +427,20 @@ function canPieceFall(x, y, pieceType, rotationIndex) {
             return false;
         }
 
-        // Check collision with snake (blocks movement but doesn't settle)
+        // Check collision with snake - piece can only be supported from below
         if (snake.some(segment => segment.x === blockX && segment.y === blockY)) {
-            return false;
+            // Check if this is a bottom block of the piece that can rest on snake
+            const isBottomBlock = !blocks.some(b =>
+                x + b[0] === blockX && y + b[1] === blockY + 1
+            );
+
+            if (isBottomBlock) {
+                // This block can rest on the snake (suspend the piece)
+                return false;
+            } else {
+                // This is not a bottom block, piece cannot pass through snake
+                return false;
+            }
         }
     }
     return true;
@@ -803,6 +850,9 @@ function restartGame() {
     destructionModeTime = 0;
     explosions = [];
 
+    // Stop any playing music
+    stopTechnoMusic();
+
     // Reset speeds to initial values
     currentSnakeSpeed = 200;
     currentPieceDropInterval = 600;
@@ -820,6 +870,8 @@ function updateStarSystem() {
     // Check if destruction mode should end
     if (destructionMode && currentTime - destructionModeTime > DESTRUCTION_MODE_DURATION) {
         destructionMode = false;
+        // Stop techno music
+        stopTechnoMusic();
     }
 
     // Spawn star randomly
@@ -907,6 +959,134 @@ function initAudio() {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         audioInitialized = true;
     }
+}
+
+// Create and play techno music for destruction mode
+function playTechnoMusic() {
+    if (!audioInitialized) initAudio();
+    if (!audioContext) return;
+
+    // Stop any existing music
+    stopTechnoMusic();
+
+    // Create main gain node for music
+    musicGainNode = audioContext.createGain();
+    musicGainNode.gain.value = 0.3; // Lower volume for music
+    musicGainNode.connect(audioContext.destination);
+
+    // Create a simple techno loop with bass and synth
+    const startTime = audioContext.currentTime;
+    const loopLength = 2.0; // 2 second loop
+
+    // Bass drum pattern (every beat)
+    for (let i = 0; i < 8; i++) {
+        const time = startTime + (i * loopLength / 4);
+        createBassDrum(time);
+    }
+
+    // Hi-hat pattern (off-beats)
+    for (let i = 0; i < 16; i++) {
+        const time = startTime + (i * loopLength / 8) + (loopLength / 16);
+        createHiHat(time);
+    }
+
+    // Synth melody
+    const notes = [220, 261.63, 329.63, 392]; // A3, C4, E4, G4
+    for (let i = 0; i < 8; i++) {
+        const time = startTime + (i * loopLength / 4);
+        const note = notes[i % notes.length];
+        createSynthNote(note, time, 0.4);
+    }
+
+    // Schedule the loop to repeat
+    setTimeout(() => {
+        if (destructionMode && technoMusic) {
+            playTechnoMusic(); // Recursive loop
+        }
+    }, loopLength * 1000);
+
+    technoMusic = musicGainNode;
+}
+
+function stopTechnoMusic() {
+    if (technoMusic) {
+        technoMusic.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+        setTimeout(() => {
+            if (technoMusic) {
+                technoMusic.disconnect();
+                technoMusic = null;
+            }
+        }, 200);
+    }
+}
+
+function createBassDrum(time) {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(60, time);
+    oscillator.frequency.exponentialRampToValueAtTime(30, time + 0.1);
+
+    gainNode.gain.setValueAtTime(0.8, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(musicGainNode);
+
+    oscillator.start(time);
+    oscillator.stop(time + 0.1);
+}
+
+function createHiHat(time) {
+    const bufferSize = audioContext.sampleRate * 0.05; // 50ms of noise
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = audioContext.createBufferSource();
+    const filter = audioContext.createBiquadFilter();
+    const gainNode = audioContext.createGain();
+
+    noise.buffer = buffer;
+    filter.type = 'highpass';
+    filter.frequency.value = 8000;
+
+    gainNode.gain.setValueAtTime(0.3, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+    noise.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(musicGainNode);
+
+    noise.start(time);
+    noise.stop(time + 0.05);
+}
+
+function createSynthNote(frequency, time, duration) {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(frequency, time);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, time);
+    filter.Q.value = 10;
+
+    gainNode.gain.setValueAtTime(0.2, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(musicGainNode);
+
+    oscillator.start(time);
+    oscillator.stop(time + duration);
 }
 
 // Create happy sound for apple eating
