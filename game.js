@@ -21,7 +21,7 @@ let snakeDirection = { x: 1, y: 0 };
 let fallingPiece = null;
 let settledPieces = [];
 let pieceDropTime = 0;
-let currentPieceDropInterval = 1000; // Base: 1 second (increased frequency)
+let currentPieceDropInterval = 600; // Base: 0.6 seconds (increased frequency)
 let pieceSuspended = false; // Track if current piece is suspended by snake
 
 // Apple
@@ -50,24 +50,47 @@ const SPEED_INCREASE_FACTOR = 0.9; // 10% faster each apple (multiply by 0.9)
 // Color gradient system
 let colorTime = 0;
 
-// Generate dynamic gradient colors based on time and segment position
+// Generate dynamic pastel gradient colors based on time and segment position
 function getSnakeColor(segmentIndex, isHead = false) {
     if (destructionMode) {
-        // Pulsating red/orange colors in destruction mode
-        const intensity = Math.sin(colorTime * 0.01) * 0.3 + 0.7;
-        return isHead ? `rgba(255, ${Math.floor(69 * intensity)}, 0, 0.9)` : `rgba(255, ${Math.floor(99 * intensity)}, 71, 0.8)`;
+        // Soft pulsating pastel red/pink colors in destruction mode
+        const intensity = Math.sin(colorTime * 0.01) * 0.2 + 0.8;
+        const lightness = 75 + Math.sin(colorTime * 0.015) * 10; // 65-85% lightness
+        return isHead ? `hsl(350, 60%, ${lightness}%)` : `hsl(340, 50%, ${lightness - 5}%)`;
     }
 
-    // Dynamic rainbow gradient for normal mode
-    const timeOffset = colorTime * 0.005; // Slow color transition
-    const segmentOffset = segmentIndex * 0.3; // Different colors for each segment
+    // Dynamic pastel rainbow gradient for normal mode
+    const timeOffset = colorTime * 0.003; // Slower, more gentle color transition
+    const segmentOffset = segmentIndex * 0.2; // Subtle difference between segments
 
-    // Create a smooth color transition through the spectrum
+    // Create a smooth pastel color transition through the spectrum
     const hue = ((timeOffset + segmentOffset) * 360) % 360;
-    const saturation = 70 + Math.sin(timeOffset * 2) * 20; // 50-90% saturation
-    const lightness = isHead ? 55 : 45; // Head slightly brighter
+    const saturation = 40 + Math.sin(timeOffset * 1.5) * 15; // 25-55% saturation (pastel range)
+    const lightness = isHead ? 85 : 80; // Much lighter, pastel range (75-85%)
 
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+// Create gradient for snake segments
+function createSnakeGradient(segment, index, isHead = false) {
+    const centerX = segment.x * GRID_SIZE + GRID_SIZE / 2;
+    const centerY = segment.y * GRID_SIZE + GRID_SIZE / 2;
+
+    // Create radial gradient for each segment
+    const gradient = ctx.createRadialGradient(
+        centerX, centerY, 2,  // Inner circle (bright center)
+        centerX, centerY, GRID_SIZE / 2  // Outer circle (darker edge)
+    );
+
+    const baseColor = getSnakeColor(index, isHead);
+    const darkerColor = getSnakeColor(index, isHead).replace(/(\d+)%\)$/, (match, lightness) => {
+        return (parseInt(lightness) - 15) + '%)';
+    });
+
+    gradient.addColorStop(0, baseColor);
+    gradient.addColorStop(1, darkerColor);
+
+    return gradient;
 }
 
 // Tetris piece shapes with vintage colors (traditional Tetris pieces)
@@ -260,7 +283,7 @@ function update() {
 
         // Increase speeds by 10% (multiply by 0.9 for 10% faster)
         currentSnakeSpeed = Math.max(50, currentSnakeSpeed * SPEED_INCREASE_FACTOR); // Min 50ms
-        currentPieceDropInterval = Math.max(200, currentPieceDropInterval * SPEED_INCREASE_FACTOR); // Min 200ms
+        currentPieceDropInterval = Math.max(150, currentPieceDropInterval * SPEED_INCREASE_FACTOR); // Min 150ms
         currentTetrisFallSpeed = Math.min(5, currentTetrisFallSpeed * 1.1); // Max 5 pixels per update
 
         // Release suspended piece when apple is eaten
@@ -439,8 +462,8 @@ function render() {
     // Draw snake (following grid format like Tetris pieces)
     snake.forEach((segment, index) => {
         if (index === 0) {
-            // Draw snake head with dynamic gradient color
-            ctx.fillStyle = getSnakeColor(index, true);
+            // Draw snake head with pastel gradient
+            ctx.fillStyle = createSnakeGradient(segment, index, true);
             ctx.fillRect(
                 segment.x * GRID_SIZE + 1,
                 segment.y * GRID_SIZE + 1,
@@ -506,8 +529,8 @@ function render() {
             }
 
         } else {
-            // Draw snake body with dynamic gradient color
-            ctx.fillStyle = getSnakeColor(index, false);
+            // Draw snake body with pastel gradient
+            ctx.fillStyle = createSnakeGradient(segment, index, false);
             ctx.fillRect(
                 segment.x * GRID_SIZE + 1,
                 segment.y * GRID_SIZE + 1,
@@ -782,7 +805,7 @@ function restartGame() {
 
     // Reset speeds to initial values
     currentSnakeSpeed = 200;
-    currentPieceDropInterval = 1000;
+    currentPieceDropInterval = 600;
     currentTetrisFallSpeed = 1;
 
     document.getElementById('gameOver').style.display = 'none';
