@@ -2,9 +2,9 @@
 
 A unique retro-style arcade game that combines the classic Snake gameplay with falling Tetris pieces. Navigate your growing snake through a battlefield of descending blocks while collecting power-ups and avoiding obstacles!
 
-## 📸 Game Screenshot
+## 📸 Game Play
 
-![Snake vs Tetris Game](screenshot.png)
+https://github.com/user-attachments/assets/82119db1-3e57-4d17-b8ab-926768b700e9
 
 *The game features retro styling with a golden color scheme, falling Tetris pieces, a growing snake, and power-ups like apples and stars.*
 
@@ -74,12 +74,6 @@ A unique retro-style arcade game that combines the classic Snake gameplay with f
 - **Star Collection**: 50 bonus points
 - **High Score**: Automatically saved and displayed
 - **Snake Length**: Tracked and displayed in real-time
-
-  
-
-https://github.com/user-attachments/assets/82119db1-3e57-4d17-b8ab-926768b700e9
-
-
 
 ## 🎨 Visual Style
 
