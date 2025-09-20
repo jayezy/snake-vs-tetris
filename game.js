@@ -47,6 +47,29 @@ let currentSnakeSpeed = 200; // Base snake speed in milliseconds
 let currentTetrisFallSpeed = 1; // How many pixels tetris pieces fall per update
 const SPEED_INCREASE_FACTOR = 0.9; // 10% faster each apple (multiply by 0.9)
 
+// Color gradient system
+let colorTime = 0;
+
+// Generate dynamic gradient colors based on time and segment position
+function getSnakeColor(segmentIndex, isHead = false) {
+    if (destructionMode) {
+        // Pulsating red/orange colors in destruction mode
+        const intensity = Math.sin(colorTime * 0.01) * 0.3 + 0.7;
+        return isHead ? `rgba(255, ${Math.floor(69 * intensity)}, 0, 0.9)` : `rgba(255, ${Math.floor(99 * intensity)}, 71, 0.8)`;
+    }
+
+    // Dynamic rainbow gradient for normal mode
+    const timeOffset = colorTime * 0.005; // Slow color transition
+    const segmentOffset = segmentIndex * 0.3; // Different colors for each segment
+
+    // Create a smooth color transition through the spectrum
+    const hue = ((timeOffset + segmentOffset) * 360) % 360;
+    const saturation = 70 + Math.sin(timeOffset * 2) * 20; // 50-90% saturation
+    const lightness = isHead ? 55 : 45; // Head slightly brighter
+
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
 // Tetris piece shapes with vintage colors (traditional Tetris pieces)
 const TETRIS_PIECES = [
     // I-piece (line)
@@ -163,6 +186,9 @@ function gameLoop() {
 
 // Update game state
 function update() {
+    // Update color animation
+    colorTime += 1;
+
     // Move snake
     const head = { ...snake[0] };
     head.x += snakeDirection.x;
@@ -413,8 +439,8 @@ function render() {
     // Draw snake (following grid format like Tetris pieces)
     snake.forEach((segment, index) => {
         if (index === 0) {
-            // Draw snake head with vintage colors (glowing in destruction mode)
-            ctx.fillStyle = destructionMode ? '#ff4500' : '#228b22'; // Orange when destructive, green normally
+            // Draw snake head with dynamic gradient color
+            ctx.fillStyle = getSnakeColor(index, true);
             ctx.fillRect(
                 segment.x * GRID_SIZE + 1,
                 segment.y * GRID_SIZE + 1,
@@ -465,15 +491,42 @@ function render() {
                 pupilSize
             );
 
+            // Add glow effect for head in destruction mode
+            if (destructionMode) {
+                ctx.shadowColor = getSnakeColor(index, true);
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = getSnakeColor(index, true);
+                ctx.fillRect(
+                    segment.x * GRID_SIZE + 1,
+                    segment.y * GRID_SIZE + 1,
+                    GRID_SIZE - 2,
+                    GRID_SIZE - 2
+                );
+                ctx.shadowBlur = 0;
+            }
+
         } else {
-            // Draw snake body with vintage color (glowing in destruction mode)
-            ctx.fillStyle = destructionMode ? '#ff6347' : '#006400'; // Tomato red when destructive, dark green normally
+            // Draw snake body with dynamic gradient color
+            ctx.fillStyle = getSnakeColor(index, false);
             ctx.fillRect(
                 segment.x * GRID_SIZE + 1,
                 segment.y * GRID_SIZE + 1,
                 GRID_SIZE - 2,
                 GRID_SIZE - 2
             );
+
+            // Add subtle glow effect in destruction mode
+            if (destructionMode) {
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 5;
+                ctx.fillRect(
+                    segment.x * GRID_SIZE + 1,
+                    segment.y * GRID_SIZE + 1,
+                    GRID_SIZE - 2,
+                    GRID_SIZE - 2
+                );
+                ctx.shadowBlur = 0;
+            }
         }
     });
 
