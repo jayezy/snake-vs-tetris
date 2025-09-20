@@ -784,6 +784,11 @@ function handleKeyPress(event) {
         }
     }
 
+    // Hard drop with spacebar
+    if (event.key === ' ' && fallingPiece) {
+        hardDropPiece();
+    }
+
     event.preventDefault();
 }
 
@@ -915,6 +920,39 @@ function updateExplosions() {
     explosions = explosions.filter(explosion =>
         currentTime - explosion.startTime < explosion.duration
     );
+}
+
+// Hard drop piece to bottom instantly
+function hardDropPiece() {
+    if (!fallingPiece) return;
+
+    let dropDistance = 0;
+
+    // Find the lowest valid position
+    while (canPieceFall(fallingPiece.x, Math.round(fallingPiece.y) + dropDistance + 1, fallingPiece.pieceType, fallingPiece.rotationIndex)) {
+        dropDistance++;
+    }
+
+    // Move piece to the bottom
+    fallingPiece.y = Math.round(fallingPiece.y) + dropDistance;
+
+    // Settle the piece immediately
+    const blocks = fallingPiece.pieceType.rotations[fallingPiece.rotationIndex];
+    for (let block of blocks) {
+        settledPieces.push({
+            x: fallingPiece.x + block[0],
+            y: Math.round(fallingPiece.y) + block[1],
+            color: fallingPiece.pieceType.color
+        });
+    }
+
+    // Clear the falling piece and reset timers
+    fallingPiece = null;
+    pieceSuspended = false;
+    pieceDropTime = Date.now();
+
+    // Play a satisfying drop sound
+    playPieceDropSound();
 }
 
 // Rotate piece function
@@ -1225,6 +1263,34 @@ function playDeathSound() {
 
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 1.0);
+}
+
+// Create satisfying thud sound for piece drop
+function playPieceDropSound() {
+    if (!audioInitialized) initAudio();
+    if (!audioContext) return;
+
+    // Create a low-frequency thud sound
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(80, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.1);
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 200;
+
+    gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
 }
 
 // Start the game

@@ -255,6 +255,23 @@
             border-color: #7a7a9a;
         }
 
+        .drop-key {
+            background: linear-gradient(135deg, #6a6a4a, #5a5a3a);
+            border-color: #8a8a6a;
+            width: 120px; /* Wider like a real spacebar */
+            font-size: 10px;
+        }
+
+        .drop-key:hover {
+            background: linear-gradient(135deg, #7a7a5a, #6a6a4a);
+            border-color: #9a9a7a;
+        }
+
+        .drop-key .key-label {
+            font-size: 8px;
+            color: #dddddd;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 1200px) {
             .game-area {
@@ -312,6 +329,9 @@
                         <button class="virtual-key move-key" data-key="a">A<span class="key-label">←</span></button>
                         <button class="virtual-key rotate-key" data-key="s">S<span class="key-label">↺</span></button>
                         <button class="virtual-key move-key" data-key="d">D<span class="key-label">→</span></button>
+                    </div>
+                    <div class="key-row">
+                        <button class="virtual-key drop-key" data-key=" ">SPACE<span class="key-label">HARD DROP</span></button>
                     </div>
                 </div>
             </div>
@@ -404,7 +424,8 @@
                     'w': 'KeyW',
                     'a': 'KeyA',
                     's': 'KeyS',
-                    'd': 'KeyD'
+                    'd': 'KeyD',
+                    ' ': 'Space'
                 };
                 return keyCodeMap[key] || key;
             }
