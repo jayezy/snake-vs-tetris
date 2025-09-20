@@ -1,8 +1,8 @@
 // Game constants
 const GRID_SIZE = 30;
-const CANVAS_WIDTH = 562; // 624 * 0.9 (10% reduction from current)
-const GRID_WIDTH = Math.floor(CANVAS_WIDTH / GRID_SIZE); // 18 blocks wide
+const GRID_WIDTH = 18; // 18 blocks wide
 const GRID_HEIGHT = 25; // 25 complete blocks tall
+const CANVAS_WIDTH = GRID_WIDTH * GRID_SIZE; // 540px (18 * 30) - matches grid exactly
 const CANVAS_HEIGHT = GRID_HEIGHT * GRID_SIZE; // 750px (25 * 30)
 
 // Game state
