@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake ⚔️ Tetris</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: 'Press Start 2P', monospace;
+            color: #c7b377;
+        }
+
+        h1 {
+            color: #ffeb3b;
+            margin: 15px 0 5px 0;
+            text-shadow: 2px 2px 0px #8b6914;
+            font-size: 26px;
+            letter-spacing: 2px;
+            position: relative;
+            top: 0;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            max-height: 100vh;
+        }
+
+        canvas {
+            border: 6px outset #8b6914;
+            background-color: #2d2d2d;
+            box-shadow:
+                inset 0 0 10px rgba(0,0,0,0.5),
+                0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .score-panel {
+            background: linear-gradient(135deg, #3d3d3d, #2a2a2a);
+            padding: 15px;
+            border: 4px inset #8b6914;
+            border-radius: 10px;
+            box-shadow:
+                inset 0 0 10px rgba(0,0,0,0.3),
+                0 2px 4px rgba(0,0,0,0.4);
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .score-panel h3 {
+            margin: 0;
+            color: #c7b377;
+            font-size: 12px;
+            text-shadow: 1px 1px 0px #2a2a2a;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .score {
+            font-size: 12px;
+            margin: 0;
+            color: #c7b377;
+            text-shadow: 1px 1px 0px #2a2a2a;
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 16px;
+            color: #ffeb3b;
+            margin-top: 5px;
+            text-shadow: 1px 1px 0px #8b6914;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #3d3d3d, #2a2a2a);
+            padding: 40px;
+            border: 6px outset #8b6914;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            box-shadow:
+                inset 0 0 20px rgba(0,0,0,0.3),
+                0 6px 12px rgba(0,0,0,0.5);
+        }
+
+        .game-over h2 {
+            color: #ff6b6b;
+            margin: 0 0 30px 0;
+            font-size: 24px;
+            text-shadow: 2px 2px 0px #8b2f2f;
+        }
+
+        button {
+            background: linear-gradient(135deg, #6ab04c, #4a7c4a);
+            color: #ffffff;
+            border: 4px outset #6ab04c;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            margin-top: 15px;
+            text-shadow: 1px 1px 0px #2a5a2a;
+            box-shadow:
+                inset 0 0 5px rgba(255,255,255,0.2),
+                0 3px 6px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #7bc96f, #5a8c5a);
+            border: 4px inset #6ab04c;
+            transform: translateY(1px);
+        }
+
+        button:active {
+            background: linear-gradient(135deg, #4a7c4a, #6ab04c);
+            transform: translateY(2px);
+            box-shadow:
+                inset 0 0 8px rgba(0,0,0,0.3),
+                0 1px 3px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake ⚔️ Tetris</h1>
+
+    <div class="game-container">
+        <div class="score-panel">
+            <div class="score">
+                <h3>CURRENT SCORE</h3>
+                <div class="score-value" id="currentScore">0</div>
+            </div>
+            <div class="score">
+                <h3>HIGH SCORE</h3>
+                <div class="score-value" id="highScore">0</div>
+            </div>
+            <div class="score">
+                <h3>SNAKE LENGTH</h3>
+                <div class="score-value" id="snakeLength">4</div>
+            </div>
+        </div>
+        <canvas id="gameCanvas" width="562" height="750"></canvas>
+    </div>
+
+    <div id="gameOver" class="game-over">
+        <h2>Game Over!</h2>
+        <p style="font-size: 10px; margin: 10px 0; color: #c7b377;">Press ENTER to restart</p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
