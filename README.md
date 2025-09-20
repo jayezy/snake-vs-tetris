@@ -75,6 +75,12 @@ A unique retro-style arcade game that combines the classic Snake gameplay with f
 - **High Score**: Automatically saved and displayed
 - **Snake Length**: Tracked and displayed in real-time
 
+  
+
+https://github.com/user-attachments/assets/82119db1-3e57-4d17-b8ab-926768b700e9
+
+
+
 ## 🎨 Visual Style
 
 - **Font**: Press Start 2P (classic arcade font)
