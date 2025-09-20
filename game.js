@@ -23,7 +23,7 @@ let snakeDirection = { x: 1, y: 0 };
 let fallingPiece = null;
 let settledPieces = [];
 let pieceDropTime = 0;
-let currentPieceDropInterval = 600; // Base: 0.6 seconds (increased frequency)
+let currentPieceDropInterval = 400; // Base: 0.4 seconds (very high frequency)
 let pieceSuspended = false; // Track if current piece is suspended by snake
 
 // Apple
@@ -285,7 +285,7 @@ function update() {
 
         // Increase speeds by 10% (multiply by 0.9 for 10% faster)
         currentSnakeSpeed = Math.max(50, currentSnakeSpeed * SPEED_INCREASE_FACTOR); // Min 50ms
-        currentPieceDropInterval = Math.max(150, currentPieceDropInterval * SPEED_INCREASE_FACTOR); // Min 150ms
+        currentPieceDropInterval = Math.max(100, currentPieceDropInterval * SPEED_INCREASE_FACTOR); // Min 100ms (very fast)
         currentTetrisFallSpeed = Math.min(5, currentTetrisFallSpeed * 1.1); // Max 5 pixels per update
 
         // Release suspended piece when apple is eaten
@@ -509,6 +509,20 @@ function render() {
     // Draw snake (following grid format like Tetris pieces)
     snake.forEach((segment, index) => {
         if (index === 0) {
+            // Add glow effect for head in destruction mode (behind everything)
+            if (destructionMode) {
+                ctx.shadowColor = getSnakeColor(index, true);
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = createSnakeGradient(segment, index, true);
+                ctx.fillRect(
+                    segment.x * GRID_SIZE + 1,
+                    segment.y * GRID_SIZE + 1,
+                    GRID_SIZE - 2,
+                    GRID_SIZE - 2
+                );
+                ctx.shadowBlur = 0;
+            }
+
             // Draw snake head with pastel gradient
             ctx.fillStyle = createSnakeGradient(segment, index, true);
             ctx.fillRect(
@@ -518,7 +532,7 @@ function render() {
                 GRID_SIZE - 2
             );
 
-            // Draw eyes (smaller to fit new grid format)
+            // Draw eyes (smaller to fit new grid format) - always visible
             ctx.fillStyle = 'white';
             const eyeSize = 4;
             const eyeOffset = 6;
@@ -535,8 +549,8 @@ function render() {
                 eyeSize
             );
 
-            // Draw pupils based on direction
-            ctx.fillStyle = 'black';
+            // Draw pupils based on direction - always visible
+            ctx.fillStyle = destructionMode ? 'red' : 'black'; // Red pupils in destruction mode
             const pupilSize = 2;
             let pupilOffsetX = eyeOffset + 1;
             let pupilOffsetY = eyeOffset + 1;
@@ -560,20 +574,6 @@ function render() {
                 pupilSize,
                 pupilSize
             );
-
-            // Add glow effect for head in destruction mode
-            if (destructionMode) {
-                ctx.shadowColor = getSnakeColor(index, true);
-                ctx.shadowBlur = 15;
-                ctx.fillStyle = getSnakeColor(index, true);
-                ctx.fillRect(
-                    segment.x * GRID_SIZE + 1,
-                    segment.y * GRID_SIZE + 1,
-                    GRID_SIZE - 2,
-                    GRID_SIZE - 2
-                );
-                ctx.shadowBlur = 0;
-            }
 
         } else {
             // Draw snake body with pastel gradient
@@ -855,7 +855,7 @@ function restartGame() {
 
     // Reset speeds to initial values
     currentSnakeSpeed = 200;
-    currentPieceDropInterval = 600;
+    currentPieceDropInterval = 400;
     currentTetrisFallSpeed = 1;
 
     document.getElementById('gameOver').style.display = 'none';
@@ -961,7 +961,7 @@ function initAudio() {
     }
 }
 
-// Create and play techno music for destruction mode
+// Create and play high BPM techno music for destruction mode
 function playTechnoMusic() {
     if (!audioInitialized) initAudio();
     if (!audioContext) return;
@@ -971,31 +971,47 @@ function playTechnoMusic() {
 
     // Create main gain node for music
     musicGainNode = audioContext.createGain();
-    musicGainNode.gain.value = 0.3; // Lower volume for music
+    musicGainNode.gain.value = 0.4; // Higher volume for impact
     musicGainNode.connect(audioContext.destination);
 
-    // Create a simple techno loop with bass and synth
+    // High BPM techno (140 BPM) with 1-second loop
     const startTime = audioContext.currentTime;
-    const loopLength = 2.0; // 2 second loop
+    const loopLength = 1.0; // 1 second loop for high energy
+    const bpm = 140;
+    const beatLength = 60 / bpm / 4; // 16th note duration
 
-    // Bass drum pattern (every beat)
-    for (let i = 0; i < 8; i++) {
+    // Intense kick drum pattern (every quarter note)
+    for (let i = 0; i < 4; i++) {
         const time = startTime + (i * loopLength / 4);
-        createBassDrum(time);
+        createHardKick(time);
     }
 
-    // Hi-hat pattern (off-beats)
+    // Fast hi-hats (every 8th note)
+    for (let i = 0; i < 8; i++) {
+        const time = startTime + (i * loopLength / 8);
+        createFastHiHat(time);
+    }
+
+    // Aggressive acid synth bass line
+    const bassNotes = [55, 73.42, 82.41, 110]; // A1, D2, E2, A2
     for (let i = 0; i < 16; i++) {
-        const time = startTime + (i * loopLength / 8) + (loopLength / 16);
-        createHiHat(time);
+        const time = startTime + (i * beatLength);
+        const note = bassNotes[i % bassNotes.length];
+        createAcidBass(note, time, beatLength * 0.8);
     }
 
-    // Synth melody
-    const notes = [220, 261.63, 329.63, 392]; // A3, C4, E4, G4
+    // Screeching lead synth
+    const leadNotes = [440, 523.25, 659.25, 783.99]; // A4, C5, E5, G5
     for (let i = 0; i < 8; i++) {
-        const time = startTime + (i * loopLength / 4);
-        const note = notes[i % notes.length];
-        createSynthNote(note, time, 0.4);
+        const time = startTime + (i * loopLength / 8) + (loopLength / 16);
+        const note = leadNotes[i % leadNotes.length];
+        createScreamingSynth(note, time, beatLength * 2);
+    }
+
+    // Industrial noise hits
+    for (let i = 0; i < 4; i++) {
+        const time = startTime + (i * loopLength / 4) + (loopLength / 8);
+        createNoiseHit(time);
     }
 
     // Schedule the loop to repeat
@@ -1020,26 +1036,36 @@ function stopTechnoMusic() {
     }
 }
 
-function createBassDrum(time) {
+function createHardKick(time) {
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
+    const distortion = audioContext.createWaveShaper();
 
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(60, time);
-    oscillator.frequency.exponentialRampToValueAtTime(30, time + 0.1);
+    oscillator.frequency.setValueAtTime(80, time);
+    oscillator.frequency.exponentialRampToValueAtTime(20, time + 0.15);
 
-    gainNode.gain.setValueAtTime(0.8, time);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+    // Add distortion for harder kick
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+        const x = (i - 128) / 128;
+        curve[i] = Math.tanh(x * 3) * 0.8;
+    }
+    distortion.curve = curve;
 
-    oscillator.connect(gainNode);
+    gainNode.gain.setValueAtTime(1.0, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+
+    oscillator.connect(distortion);
+    distortion.connect(gainNode);
     gainNode.connect(musicGainNode);
 
     oscillator.start(time);
-    oscillator.stop(time + 0.1);
+    oscillator.stop(time + 0.15);
 }
 
-function createHiHat(time) {
-    const bufferSize = audioContext.sampleRate * 0.05; // 50ms of noise
+function createFastHiHat(time) {
+    const bufferSize = audioContext.sampleRate * 0.03; // 30ms for faster hits
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
 
@@ -1053,20 +1079,20 @@ function createHiHat(time) {
 
     noise.buffer = buffer;
     filter.type = 'highpass';
-    filter.frequency.value = 8000;
+    filter.frequency.value = 12000; // Higher frequency for sharper sound
 
-    gainNode.gain.setValueAtTime(0.3, time);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+    gainNode.gain.setValueAtTime(0.5, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
 
     noise.connect(filter);
     filter.connect(gainNode);
     gainNode.connect(musicGainNode);
 
     noise.start(time);
-    noise.stop(time + 0.05);
+    noise.stop(time + 0.03);
 }
 
-function createSynthNote(frequency, time, duration) {
+function createAcidBass(frequency, time, duration) {
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     const filter = audioContext.createBiquadFilter();
@@ -1074,11 +1100,14 @@ function createSynthNote(frequency, time, duration) {
     oscillator.type = 'sawtooth';
     oscillator.frequency.setValueAtTime(frequency, time);
 
+    // Resonant filter for acid sound
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(800, time);
-    filter.Q.value = 10;
+    filter.frequency.setValueAtTime(200, time);
+    filter.frequency.exponentialRampToValueAtTime(800, time + duration * 0.3);
+    filter.frequency.exponentialRampToValueAtTime(150, time + duration);
+    filter.Q.value = 25; // High resonance
 
-    gainNode.gain.setValueAtTime(0.2, time);
+    gainNode.gain.setValueAtTime(0.6, time);
     gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
     oscillator.connect(filter);
@@ -1087,6 +1116,69 @@ function createSynthNote(frequency, time, duration) {
 
     oscillator.start(time);
     oscillator.stop(time + duration);
+}
+
+function createScreamingSynth(frequency, time, duration) {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+    const distortion = audioContext.createWaveShaper();
+
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(frequency, time);
+    oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.5, time + duration * 0.5);
+
+    // Aggressive distortion
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+        const x = (i - 128) / 128;
+        curve[i] = Math.sign(x) * Math.pow(Math.abs(x), 0.5);
+    }
+    distortion.curve = curve;
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, time);
+    filter.Q.value = 15;
+
+    gainNode.gain.setValueAtTime(0.3, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+    oscillator.connect(distortion);
+    distortion.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(musicGainNode);
+
+    oscillator.start(time);
+    oscillator.stop(time + duration);
+}
+
+function createNoiseHit(time) {
+    const bufferSize = audioContext.sampleRate * 0.08; // 80ms industrial hit
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+    }
+
+    const noise = audioContext.createBufferSource();
+    const filter = audioContext.createBiquadFilter();
+    const gainNode = audioContext.createGain();
+
+    noise.buffer = buffer;
+    filter.type = 'bandpass';
+    filter.frequency.value = 3000;
+    filter.Q.value = 8;
+
+    gainNode.gain.setValueAtTime(0.7, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+    noise.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(musicGainNode);
+
+    noise.start(time);
+    noise.stop(time + 0.08);
 }
 
 // Create happy sound for apple eating
